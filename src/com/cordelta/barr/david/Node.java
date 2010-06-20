@@ -8,9 +8,9 @@ public class Node {
     private static WeakHashMap<Node, WeakReference<Node>> map =
             new WeakHashMap<Node, WeakReference<Node>>();
 
-    private final String token;
-    private final Node left, right, middle;
-    private final int hash;
+    public final String token;
+    public final Node left, right, middle;
+    public final int hash;
 
     private Node(Node left, Node middle, Node right, String token) {
         this.left = left;
@@ -74,6 +74,8 @@ public class Node {
         while (result != null)
             if (result.left != null)
                 result = result.left;
+            else
+                break;
         return result;
     }
 
@@ -179,6 +181,34 @@ public class Node {
             return new Node(null, graft(null, null, key, source), null, token).intern();
         }
         return root.graft(token, key, source);
+    }
+
+    public interface DeltaHandler {
+        public void delta(String path, Node a, Node b);
+    }
+
+    public static void diff(String path, Node aRoot, Node bRoot, DeltaHandler handler) {
+        Node a = aRoot == null ? null : aRoot.first();
+        Node b = bRoot == null ? null : bRoot.first();
+        while (a != null || b != null) {
+            int cmp = a == null ? 1 : b == null ? -1 : a.token.compareTo(b.token);
+            if (cmp < 0 && a != null) {
+                handler.delta(path + "/" + a.token, a, null);
+                diff(path + "/" + (a.token), a.middle, b == null ? null : b.middle, handler);
+                a = aRoot.next(a);
+                continue;
+            }
+            if (cmp > 0 && b != null) {
+                handler.delta(path + "/" + b.token, null, b);
+                diff(path + "/" + b.token, a == null ? null : a.middle, b.middle, handler);
+                b = bRoot.next(b);
+                continue;
+            }
+            handler.delta(path + "/" + (a != null ? a.token : b.token), a, b);
+            diff(path + "/" + (a != null ? a.token : b.token), a == null ? null : a.middle, b == null ? null : b.middle, handler);
+            a = aRoot == null ? null : aRoot.next(a);
+            b = bRoot == null ? null : bRoot.next(b);
+        }
     }
 
     @Override
