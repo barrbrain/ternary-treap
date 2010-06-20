@@ -121,12 +121,41 @@ public class Node {
     }
 
     public static Node insert(Node root, String token, Iterator<String> key) {
-        if (token == null && !key.hasNext()) return null;
+        if (token == null && !key.hasNext()) return root;
         if (token == null) token = key.next();
         if (root == null) {
             return new Node(null, insert(null, null, key), null, token).intern();
         }
         return root.insert(token, key);
+    }
+
+    private Node remove(String token, Iterator<String> key) {
+        int cmp = token.compareTo(this.token);
+        if (cmp == 0 && !key.hasNext()) {
+            if (left == null) {
+                if (right == null)
+                    return null;
+            } else if (right == null || left.hash > right.hash) {
+                return left.right(left(left.right).remove(token, key));
+            }
+            return right.left(right(right.left).remove(token, key));
+        }
+        if (cmp == 0) {
+            return middle(remove(middle, null, key));
+        } else if (cmp < 0) {
+            return left(remove(left, token, key));
+        } else {
+            return right(remove(right, token, key));
+        }
+    }
+
+    public static Node remove(Node root, String token, Iterator<String> key) {
+        if (token == null && !key.hasNext()) return root;
+        if (token == null) token = key.next();
+        if (root == null) {
+            return null;
+        }
+        return root.remove(token, key);
     }
 
     @Override
