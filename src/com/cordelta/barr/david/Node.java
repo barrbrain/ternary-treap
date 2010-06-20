@@ -153,23 +153,18 @@ public class Node {
     @Override
     public String toString() {
         final StringBuffer sb = new StringBuffer();
-        toString(this, sb);
+        toString(0, this, sb);
         return sb.toString();
     }
 
-    private static void toString(Node that, StringBuffer sb) {
+    private static void toString(int depth, Node that, StringBuffer sb) {
         if (that == null) {
-            sb.append((String) null);
             return;
         }
-        sb.append("Node");
-        sb.append("{token='").append(that.token).append('\'');
-        sb.append(", right=");
-        toString(that.right, sb);
-        sb.append(", middle=");
-        toString(that.middle, sb);
-        sb.append(", left=");
-        toString(that.left, sb);
-        sb.append('}');
+        toString(depth, that.left, sb);
+        for (int i = 0; i < depth; ++i) sb.append(' ');
+        sb.append('\'').append(that.token).append("'\n");
+        toString(depth + 1, that.middle, sb);
+        toString(depth, that.right, sb);
     }
 }
