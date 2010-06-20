@@ -158,6 +158,29 @@ public class Node {
         return root.remove(token, key);
     }
 
+    private Node graft(String token, Iterator<String> key, Node source) {
+        int cmp = token.compareTo(this.token);
+        if (cmp == 0 && !key.hasNext()) {
+            return middle(source.middle);
+        }
+        if (cmp == 0) {
+            return middle(graft(middle, null, key, source));
+        } else if (cmp < 0) {
+            return left(graft(left, token, key, source)).balance();
+        } else {
+            return right(graft(right, token, key, source)).balance();
+        }
+    }
+
+    public static Node graft(Node root, String token, Iterator<String> key, Node source) {
+        if (token == null && !key.hasNext()) return source.middle;
+        if (token == null) token = key.next();
+        if (root == null) {
+            return new Node(null, graft(null, null, key, source), null, token).intern();
+        }
+        return root.graft(token, key, source);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
