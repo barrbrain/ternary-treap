@@ -25,9 +25,8 @@ public class Node {
     }
 
     private Node intern() {
-        if (map.containsKey(this)) {
+        if (map.containsKey(this))
             return map.get(this).get();
-        }
         map.put(this, new WeakReference<Node>(this));
         return this;
     }
@@ -54,101 +53,58 @@ public class Node {
         String token = key.next();
         while (result != null) {
             int cmp = token.compareTo(result.token);
-            if (cmp == 0 && !key.hasNext()) {
+            if (cmp == 0 && !key.hasNext())
                 break;
-            }
-            if (cmp == 0) {
-                result = result.middle;
+            if (cmp == 0)
                 token = key.next();
-            } else if (cmp < 0) {
-                result = result.left;
-            } else {
-                result = result.right;
-            }
+            result = cmp < 0 ? result.left : cmp == 0 ? result.middle : result.right;
         }
         return result;
     }
 
-    public Node first() {
-        Node result = this;
-        while (result != null)
-            if (result.left != null)
-                result = result.left;
-            else
-                break;
+    public static Node first(Node root) {
+        Node result = root;
+        while (result != null && result.left != null)
+            result = result.left;
         return result;
     }
 
-    public Node next(Node node) {
-        Node result = null;
-        if (node.right != null) {
-            result = node.right.first();
-        } else {
-            Node tmp = this;
-            int cmp;
-            while ((cmp = node.token.compareTo(tmp.token)) != 0) {
+    public static Node next(Node root, Node node) {
+        int cmp;
+        Node result = first(node.right);
+        if (result == null)
+            while (root != null && (cmp = node.token.compareTo(root.token)) != 0)
                 if (cmp < 0) {
-                    result = tmp;
-                    tmp = tmp.left;
-                } else {
-                    tmp = tmp.right;
-                }
-            }
-        }
+                    result = root;
+                    root = root.left;
+                } else
+                    root = root.right;
         return result;
-    }
-
-    private Node insert(String token, Iterator<String> key) {
-        int cmp = token.compareTo(this.token);
-        if (cmp == 0 && !key.hasNext()) {
-            return this;
-        }
-        if (cmp == 0) {
-            return middle(insert(middle, null, key));
-        } else if (cmp < 0) {
-            return left(insert(left, token, key)).balance();
-        } else {
-            return right(insert(right, token, key)).balance();
-        }
     }
 
     private Node balance() {
-        if (left != null && left.hash > hash) {
+        if (left != null && left.hash > hash)
             return left.right(left(left.right));
-        }
-        if (right != null && right.hash > hash) {
+        if (right != null && right.hash > hash)
             return right.left(right(right.left));
-        }
         return this;
     }
 
     public static Node insert(Node root, String token, Iterator<String> key) {
-        if (token == null && !key.hasNext()) return root;
-        if (token == null) token = key.next();
-        if (root == null) {
+        if (token == null && !key.hasNext())
+            return root;
+        if (token == null)
+            token = key.next();
+        if (root == null)
             return new Node(null, insert(null, null, key), null, token).intern();
-        }
-        return root.insert(token, key);
-    }
-
-    private Node remove(String token, Iterator<String> key) {
-        int cmp = token.compareTo(this.token);
-        if (cmp == 0 && !key.hasNext()) {
-            if (left == null) {
-                if (right == null)
-                    return null;
-            } else if (right == null || left.hash > right.hash) {
-                return left.right(left(left.right).remove(token, key));
-            }
-            return right.left(right(right.left).remove(token, key));
-        }
-        if (cmp == 0) {
-            return middle(remove(middle, null, key));
-        } else if (cmp < 0) {
-            return left(remove(left, token, key));
-        } else {
-            return right(remove(right, token, key));
-        }
+        int cmp = token.compareTo(root.token);
+        if (cmp == 0 && !key.hasNext())
+            return root;
+        if (cmp == 0)
+            return root.middle(insert(root.middle, null, key));
+        if (cmp < 0)
+            return root.left(insert(root.left, token, key)).balance();
+        return root.right(insert(root.right, token, key)).balance();
     }
 
     public static Node remove(Node root, String token, Iterator<String> key) {
@@ -157,7 +113,20 @@ public class Node {
         if (root == null) {
             return null;
         }
-        return root.remove(token, key);
+        int cmp = token.compareTo(root.token);
+        if (cmp == 0 && !key.hasNext()) {
+            if (root.left == null) {
+                if (root.right == null)
+                    return null;
+            } else if (root.right == null || root.left.hash > root.right.hash)
+                return root.left.right(remove(root.left(root.left.right), token, key));
+            return root.right.left(remove(root.right(root.right.left), token, key));
+        }
+        if (cmp == 0)
+            return root.middle(remove(root.middle, null, key));
+        if (cmp < 0)
+            return root.left(remove(root.left, token, key));
+        return root.right(remove(root.right, token, key));
     }
 
     private Node graft(String token, Iterator<String> key, Node source) {
@@ -188,26 +157,29 @@ public class Node {
     }
 
     public static void diff(String path, Node aRoot, Node bRoot, DeltaHandler handler) {
-        Node a = aRoot == null ? null : aRoot.first();
-        Node b = bRoot == null ? null : bRoot.first();
+        Node a = first(aRoot);
+        Node b = first(bRoot);
         while (a != null || b != null) {
             int cmp = a == null ? 1 : b == null ? -1 : a.token.compareTo(b.token);
             if (cmp < 0 && a != null) {
                 handler.delta(path + "/" + a.token, a, null);
                 diff(path + "/" + (a.token), a.middle, b == null ? null : b.middle, handler);
-                a = aRoot.next(a);
+                a = next(aRoot, a);
                 continue;
             }
             if (cmp > 0 && b != null) {
                 handler.delta(path + "/" + b.token, null, b);
                 diff(path + "/" + b.token, a == null ? null : a.middle, b.middle, handler);
-                b = bRoot.next(b);
+                b = next(bRoot, b);
                 continue;
             }
             handler.delta(path + "/" + (a != null ? a.token : b.token), a, b);
-            diff(path + "/" + (a != null ? a.token : b.token), a == null ? null : a.middle, b == null ? null : b.middle, handler);
-            a = aRoot == null ? null : aRoot.next(a);
-            b = bRoot == null ? null : bRoot.next(b);
+            diff(path + "/" + (a != null ? a.token : b.token),
+                    a == null ? null : a.middle,
+                    b == null ? null : b.middle,
+                    handler);
+            a = next(aRoot, a);
+            b = next(bRoot, b);
         }
     }
 
