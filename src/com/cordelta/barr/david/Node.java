@@ -1,7 +1,6 @@
 package com.cordelta.barr.david;
 
 import java.lang.ref.WeakReference;
-import java.util.Iterator;
 import java.util.WeakHashMap;
 
 public class Node {
@@ -47,19 +46,15 @@ public class Node {
         return new Node(left, middle, right, token.intern());
     }
 
-    public static Node search(Node root, Iterator<String> key) {
-        if (!key.hasNext()) return null;
-        Node result = root;
-        String token = key.next();
-        while (result != null) {
-            int cmp = token.compareTo(result.token);
-            if (cmp == 0 && !key.hasNext())
+    public static Node search(Node root, Sequence<String> key) {
+        if (key.value() == null) return root;
+        while (root != null) {
+            int cmp = key.value().compareTo(root.token);
+            if (cmp == 0 && key.next().value() == null)
                 break;
-            if (cmp == 0)
-                token = key.next();
-            result = cmp < 0 ? result.left : cmp == 0 ? result.middle : result.right;
+            root = cmp < 0 ? root.left : cmp == 0 ? root.middle : root.right;
         }
-        return result;
+        return root;
     }
 
     public static Node first(Node root) {
@@ -90,66 +85,53 @@ public class Node {
         return this;
     }
 
-    public static Node insert(Node root, String token, Iterator<String> key) {
-        if (token == null && !key.hasNext())
+    public static Node insert(Node root, Sequence<String> key) {
+        if (key.value() == null)
             return root;
-        if (token == null)
-            token = key.next();
-        if (root == null)
-            return new Node(null, insert(null, null, key), null, token).intern();
-        int cmp = token.compareTo(root.token);
-        if (cmp == 0 && !key.hasNext())
-            return root;
+        if (root == null) {
+            String token = key.value();
+            return new Node(null, insert(null, key.next()), null, token).intern();
+        }
+        int cmp = key.value().compareTo(root.token);
         if (cmp == 0)
-            return root.middle(insert(root.middle, null, key));
+            return root.middle(insert(root.middle, key.next()));
         if (cmp < 0)
-            return root.left(insert(root.left, token, key)).balance();
-        return root.right(insert(root.right, token, key)).balance();
+            return root.left(insert(root.left, key)).balance();
+        return root.right(insert(root.right, key)).balance();
     }
 
-    public static Node remove(Node root, String token, Iterator<String> key) {
-        if (token == null && !key.hasNext()) return root;
-        if (token == null) token = key.next();
-        if (root == null) {
+    public static Node remove(Node root, Sequence<String> key) {
+        if (key.value() == null || root == null)
             return null;
-        }
-        int cmp = token.compareTo(root.token);
-        if (cmp == 0 && !key.hasNext()) {
+        int cmp = key.value().compareTo(root.token);
+        if (cmp == 0 && key.next().value() == null) {
             if (root.left == null) {
                 if (root.right == null)
                     return null;
             } else if (root.right == null || root.left.hash > root.right.hash)
-                return root.left.right(remove(root.left(root.left.right), token, key));
-            return root.right.left(remove(root.right(root.right.left), token, key));
+                return root.left.right(remove(root.left(root.left.right), key));
+            return root.right.left(remove(root.right(root.right.left), key));
         }
         if (cmp == 0)
-            return root.middle(remove(root.middle, null, key));
+            return root.middle(remove(root.middle, key));
         if (cmp < 0)
-            return root.left(remove(root.left, token, key));
-        return root.right(remove(root.right, token, key));
+            return root.left(remove(root.left, key));
+        return root.right(remove(root.right, key));
     }
 
-    private Node graft(String token, Iterator<String> key, Node source) {
-        int cmp = token.compareTo(this.token);
-        if (cmp == 0 && !key.hasNext()) {
-            return middle(source.middle);
-        }
-        if (cmp == 0) {
-            return middle(graft(middle, null, key, source));
-        } else if (cmp < 0) {
-            return left(graft(left, token, key, source)).balance();
-        } else {
-            return right(graft(right, token, key, source)).balance();
-        }
-    }
-
-    public static Node graft(Node root, String token, Iterator<String> key, Node source) {
-        if (token == null && !key.hasNext()) return source.middle;
-        if (token == null) token = key.next();
+    public static Node graft(Node root, Sequence<String> key, Node source) {
+        if (key.value() == null)
+            return source.middle;
         if (root == null) {
-            return new Node(null, graft(null, null, key, source), null, token).intern();
+            String token = key.value();
+            return new Node(null, graft(null, key.next(), source), null, token).intern();
         }
-        return root.graft(token, key, source);
+        int cmp = key.value().compareTo(root.token);
+        if (cmp == 0)
+            return root.middle(graft(root.middle, key.next(), source));
+        if (cmp < 0)
+            return root.left(graft(root.left, key, source)).balance();
+        return root.right(graft(root.right, key, source)).balance();
     }
 
     public interface DeltaHandler {
