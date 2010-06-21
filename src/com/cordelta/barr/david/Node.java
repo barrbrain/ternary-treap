@@ -47,9 +47,9 @@ public class Node {
         return new Node(left, middle, right, token.intern());
     }
 
-    public Node search(Iterator<String> key) {
+    public static Node search(Node root, Iterator<String> key) {
         if (!key.hasNext()) return null;
-        Node result = this;
+        Node result = root;
         String token = key.next();
         while (result != null) {
             int cmp = token.compareTo(result.token);
