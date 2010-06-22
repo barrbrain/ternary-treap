@@ -11,29 +11,6 @@ public class Node {
     public final Node left, right, middle;
     public final int hash;
 
-    private Node(Node left, Node middle, Node right, String token) {
-        this.left = left;
-        this.middle = middle;
-        this.right = right;
-        this.token = token.intern();
-        int hash = token.hashCode();
-        hash = 31 * hash + (left != null ? left.hash : 0);
-        hash = 31 * hash + (right != null ? right.hash : 0);
-        hash = 31 * hash + (middle != null ? middle.hash : 0);
-        this.hash = hash * (int) 2654435761l;
-    }
-
-    private Node intern() {
-        if (map.containsKey(this))
-            return map.get(this).get();
-        map.put(this, new WeakReference<Node>(this));
-        return this;
-    }
-
-    public static int count() {
-        return map.size();
-    }
-
     public Node left(Node left) {
         return new Node(left, middle, right, token).intern();
     }
@@ -88,10 +65,8 @@ public class Node {
     public static Node insert(Node root, Sequence<String> key) {
         if (key.value() == null)
             return root;
-        if (root == null) {
-            String token = key.value();
-            return new Node(null, insert(null, key.next()), null, token).intern();
-        }
+        if (root == null)
+            root = new Node(null, null, null, key.value());
         int cmp = key.value().compareTo(root.token);
         if (cmp == 0)
             return root.middle(insert(root.middle, key.next()));
@@ -122,10 +97,8 @@ public class Node {
     public static Node graft(Node root, Sequence<String> key, Node source) {
         if (key.value() == null)
             return source.middle;
-        if (root == null) {
-            String token = key.value();
-            return new Node(null, graft(null, key.next(), source), null, token).intern();
-        }
+        if (root == null)
+            root = new Node(null, null, null, key.value());
         int cmp = key.value().compareTo(root.token);
         if (cmp == 0)
             return root.middle(graft(root.middle, key.next(), source));
@@ -143,26 +116,38 @@ public class Node {
         Node b = first(bRoot);
         while (a != null || b != null) {
             int cmp = a == null ? 1 : b == null ? -1 : a.token.compareTo(b.token);
-            if (cmp < 0 && a != null) {
-                handler.delta(path + "/" + a.token, a, null);
-                diff(path + "/" + (a.token), a.middle, b == null ? null : b.middle, handler);
-                a = next(aRoot, a);
-                continue;
-            }
-            if (cmp > 0 && b != null) {
-                handler.delta(path + "/" + b.token, null, b);
-                diff(path + "/" + b.token, a == null ? null : a.middle, b.middle, handler);
-                b = next(bRoot, b);
-                continue;
-            }
-            handler.delta(path + "/" + (a != null ? a.token : b.token), a, b);
-            diff(path + "/" + (a != null ? a.token : b.token),
-                    a == null ? null : a.middle,
-                    b == null ? null : b.middle,
-                    handler);
-            a = next(aRoot, a);
-            b = next(bRoot, b);
+            Node aa = cmp > 0 ? null : a;
+            Node bb = cmp < 0 ? null : b;
+            String token = aa != null ? aa.token : bb != null ? bb.token : null;
+            handler.delta(path + "/" + token, aa, bb);
+            if (bb != null && bb.middle != null)
+                diff(path + "/" + token, aa == null ? null : aa.middle, bb.middle, handler);
+            a = aa == null ? a : next(aRoot, a);
+            b = bb == null ? b : next(bRoot, b);
         }
+    }
+
+    private Node(Node left, Node middle, Node right, String token) {
+        this.left = left;
+        this.middle = middle;
+        this.right = right;
+        this.token = token.intern();
+        int hash = token.hashCode();
+        hash = 31 * hash + (left != null ? left.hash : 0);
+        hash = 31 * hash + (right != null ? right.hash : 0);
+        hash = 31 * hash + (middle != null ? middle.hash : 0);
+        this.hash = hash * (int) 2654435761l;
+    }
+
+    private Node intern() {
+        if (map.containsKey(this))
+            return map.get(this).get();
+        map.put(this, new WeakReference<Node>(this));
+        return this;
+    }
+
+    public static int count() {
+        return map.size();
     }
 
     @Override
