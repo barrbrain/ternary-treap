@@ -116,14 +116,14 @@ public class Node {
         Node b = first(bRoot);
         while (a != null || b != null) {
             int cmp = a == null ? 1 : b == null ? -1 : a.token.compareTo(b.token);
-            Node aa = cmp > 0 ? null : a;
-            Node bb = cmp < 0 ? null : b;
-            String token = aa != null ? aa.token : bb != null ? bb.token : null;
-            handler.delta(path + "/" + token, aa, bb);
-            if (bb != null && bb.middle != null)
-                diff(path + "/" + token, aa == null ? null : aa.middle, bb.middle, handler);
-            a = aa == null ? a : next(aRoot, a);
-            b = bb == null ? b : next(bRoot, b);
+            String deltaPath = path + "/" + (cmp <= 0 ? a.token : b.token);
+            handler.delta(deltaPath, cmp > 0 ? null : a, cmp < 0 ? null : b);
+            if (cmp >= 0 && b.middle != null)
+                diff(deltaPath, cmp > 0 || a == null ? null : a.middle, b.middle, handler);
+            if (cmp <= 0)
+                a = next(aRoot, a);
+            if (cmp >= 0)
+                b = next(bRoot, b);
         }
     }
 
