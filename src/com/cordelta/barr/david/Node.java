@@ -4,27 +4,10 @@ import java.lang.ref.WeakReference;
 import java.util.WeakHashMap;
 
 public class Node {
-    private static WeakHashMap<Node, WeakReference<Node>> map =
-            new WeakHashMap<Node, WeakReference<Node>>();
-
-    public final String token;
-    public final Node left, right, middle;
-    public final int hash;
-
-    public Node left(Node left) {
-        return new Node(left, middle, right, token).intern();
-    }
-
-    public Node right(Node right) {
-        return new Node(left, middle, right, token).intern();
-    }
-
-    public Node middle(Node middle) {
-        return new Node(left, middle, right, token.intern());
-    }
 
     public static Node search(Node root, Sequence<String> key) {
-        if (key.value() == null) return root;
+        if (key.value() == null)
+            return root;
         while (root != null) {
             int cmp = key.value().compareTo(root.token);
             if (cmp == 0 && key.next().value() == null)
@@ -32,26 +15,6 @@ public class Node {
             root = cmp < 0 ? root.left : cmp == 0 ? root.middle : root.right;
         }
         return root;
-    }
-
-    public static Node first(Node root) {
-        Node result = root;
-        while (result != null && result.left != null)
-            result = result.left;
-        return result;
-    }
-
-    public static Node next(Node root, Node node) {
-        int cmp;
-        Node result = first(node.right);
-        if (result == null)
-            while (root != null && (cmp = node.token.compareTo(root.token)) != 0)
-                if (cmp < 0) {
-                    result = root;
-                    root = root.left;
-                } else
-                    root = root.right;
-        return result;
     }
 
     private Node balance() {
@@ -107,8 +70,24 @@ public class Node {
         return root.right(graft(root.right, key, source)).balance();
     }
 
-    public interface DeltaHandler {
-        public void delta(String path, Node a, Node b);
+    public static Node first(Node root) {
+        Node result = root;
+        while (result != null && result.left != null)
+            result = result.left;
+        return result;
+    }
+
+    public static Node next(Node root, Node node) {
+        int cmp;
+        Node result = first(node.right);
+        if (result == null)
+            while (root != null && (cmp = node.token.compareTo(root.token)) != 0)
+                if (cmp < 0) {
+                    result = root;
+                    root = root.left;
+                } else
+                    root = root.right;
+        return result;
     }
 
     public static void diff(String path, Node aRoot, Node bRoot, DeltaHandler handler) {
@@ -126,6 +105,29 @@ public class Node {
                 b = next(bRoot, b);
         }
     }
+
+    public interface DeltaHandler {
+        public void delta(String path, Node a, Node b);
+    }
+
+    public final String token;
+    public final Node left, right, middle;
+
+    public Node left(Node left) {
+        return new Node(left, middle, right, token).intern();
+    }
+
+    public Node right(Node right) {
+        return new Node(left, middle, right, token).intern();
+    }
+
+    public Node middle(Node middle) {
+        return new Node(left, middle, right, token.intern());
+    }
+
+    private static WeakHashMap<Node, WeakReference<Node>> map =
+            new WeakHashMap<Node, WeakReference<Node>>();
+    public final int hash;
 
     private Node(Node left, Node middle, Node right, String token) {
         this.left = left;
