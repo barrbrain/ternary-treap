@@ -38,18 +38,21 @@ public class Node {
         return root.right(insert(root.right, key)).balance();
     }
 
+    private static Node removeRoot(Node root) {
+        if (root.left == null) {
+            if (root.right == null)
+                return null;
+        } else if (root.right == null || root.left.hash > root.right.hash)
+            return root.left.right(removeRoot(root.left(root.left.right)));
+        return root.right.left(removeRoot(root.right(root.right.left)));
+    }
+
     public static Node remove(Node root, Sequence<String> key) {
         if (key.value() == null || root == null)
             return null;
         int cmp = key.value().compareTo(root.token);
-        if (cmp == 0 && key.next().value() == null) {
-            if (root.left == null) {
-                if (root.right == null)
-                    return null;
-            } else if (root.right == null || root.left.hash > root.right.hash)
-                return root.left.right(remove(root.left(root.left.right), key));
-            return root.right.left(remove(root.right(root.right.left), key));
-        }
+        if (cmp == 0 && key.next().value() == null)
+            return removeRoot(root);
         if (cmp == 0)
             return root.middle(remove(root.middle, key));
         if (cmp < 0)
