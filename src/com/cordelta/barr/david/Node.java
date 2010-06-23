@@ -73,14 +73,14 @@ public class Node {
         return root.right(graft(root.right, key, source)).balance();
     }
 
-    public static Node first(Node root) {
+    private static Node first(Node root) {
         Node result = root;
         while (result != null && result.left != null)
             result = result.left;
         return result;
     }
 
-    public static Node next(Node root, Node node) {
+    private static Node next(Node root, Node node) {
         int cmp;
         Node result = first(node.right);
         if (result == null)
