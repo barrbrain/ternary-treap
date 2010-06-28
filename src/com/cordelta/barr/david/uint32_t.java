@@ -21,10 +21,6 @@ public class uint32_t {
         return new uint32_t().value(value);
     }
 
-    public static uint32_t copy(uint32_t value) {
-        return new uint32_t().value(value.value);
-    }
-
     public uint32_t copy() {
         return new uint32_t().value(value);
     }

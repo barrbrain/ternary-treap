@@ -21,20 +21,6 @@ public class Node {
         return trpn_pointer(root);
     }
 
-    private static void balance(uint32_t node) {
-        uint32_t left = trp_left_get(node);
-        if (!NULL.equals(left) &&
-                trp_prio_get(left) > trp_prio_get(node)) {
-            trpn_rotate_right(node);
-            return;
-        }
-        uint32_t right = trp_right_get(node);
-        if (!NULL.equals(right) &&
-                trp_prio_get(right) > trp_prio_get(node)) {
-            trpn_rotate_left(node);
-        }
-    }
-
     public static Node insert(Node root, Sequence<String> key) {
         uint32_t offset = new uint32_t().value(trpn_offset(root));
         insert(offset, key);
@@ -59,13 +45,15 @@ public class Node {
             uint32_t left = trp_left_get(root).copy();
             insert(left, key);
             trp_left_set(root, left);
-            balance(root);
+            if (trp_prio_get(left) > trp_prio_get(root))
+                trpn_rotate_right(root);
             return;
         }
         uint32_t right = trp_right_get(root).copy();
         insert(right, key);
         trp_right_set(root, right);
-        balance(root);
+        if (trp_prio_get(right) > trp_prio_get(root))
+            trpn_rotate_left(root);
     }
 
     private static void removeRoot(uint32_t root) {
