@@ -24,6 +24,7 @@ public class Test {
 
         root = Node.graft(root, sequence("/Users/david/Documents/svn-dump-fast-export.old"),
                 Node.search(root, sequence("/Users/david/Documents/svn-dump-fast-export")));
+        Node.commit();
 
         root = Node.graft(root, sequence("/Users/david/Documents/svn-dump-fast-export/refs"),
                 Node.search(root, sequence("/Users/david/Documents/svn-dump-fast-export/.git/refs")));
